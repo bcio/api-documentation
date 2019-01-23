@@ -826,14 +826,14 @@ require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/or
 **cURL:**
 
 ```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/depth
+curl --request GET \  --url https://api.blockchain.io/api/v2/depth?market=ethbtc&limit=2
 ```
 
 
 **Ruby:**
 
 ```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/depth")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
+require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/depth?market=ethbtc&limit=2")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
 ```
 
 
