@@ -580,14 +580,14 @@ require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/or
 **cURL:**
 
 ```bash
-curl --request POST \  --url https://api.blockchain.io/api/v2/orders \  --header 'content-type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' \  --form market=xrpbtc \  --form side=sell \  --form volume=5 \  --form order_type=limit \  --form price=0.1
+curl --request POST \  --url https://api.blockchain.io/api/v2/orders \  --header 'Authorization: Bearer {{JWT_TOKEN}}; content-type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' \  --form market=ethbtc \  --form side=sell \  --form volume=5 \  --form order_type=limit \  --form price=0.1
 ```
 
 
 **Ruby:**
 
 ```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/orders")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Post.new(url)request.body = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"market\"\r\n\r\nxrpbtc\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"side\"\r\n\r\nsell\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"volume\"\r\n\r\n5\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"order_type\"\r\n\r\nlimit\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"price\"\r\n\r\n0.1\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"response = http.request(request)puts response.read_bodyhttp = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
+require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/orders")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Post.new(url)request.body = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"market\"\r\n\r\nethbtc\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"side\"\r\n\r\nsell\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"volume\"\r\n\r\n5\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"order_type\"\r\n\r\nlimit\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"price\"\r\n\r\n0.1\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"response = http.request(request)puts response.read_bodyhttp = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
 ```
 
 
@@ -665,14 +665,14 @@ require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/or
 **cURL:**
 
 ```bash
-curl --request POST \  --url https: /api.blockchain.io/api/v2/orders/multi \  --header 'Content-Type: application/json' \  --data '{ "market": "xrpbtc", "orders": [	 {		 "side": "sell",		 "volume": 0.1,		 "order_type": "limit",		 "price": 10	 } ]}
+curl --request POST \  --url https: /api.blockchain.io/api/v2/orders/multi \  --header 'Authorization: Bearer {{JWT_TOKEN}}; Content-Type: application/json' \  --data '{ "market": "ethbtc", "orders": [	 {		 "side": "sell",		 "volume": 0.1,		 "order_type": "limit",		 "price": 10	 } ]}
 ```
 
 
 **Ruby:**
 
 ```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/orders/multi")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Post.new(url)request["Content-Type"] = 'application/json'request.body = "{\n \"market\": \"xrpbtc\",\n \"orders\": [\n\t {\n\t\t \"side\": \"sell\",\n\t\t \"volume\": 0.1,\n\t\t \"order_type\": \"limit\",\n\t\t \"price\": 10\n\t }\n ]\n}\n "response = http.request(request)puts response.read_body
+require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/orders/multi")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Post.new(url)request["Content-Type"] = 'application/json'request.body = "{\n \"market\": \"ethbtc\",\n \"orders\": [\n\t {\n\t\t \"side\": \"sell\",\n\t\t \"volume\": 0.1,\n\t\t \"order_type\": \"limit\",\n\t\t \"price\": 10\n\t }\n ]\n}\n "response = http.request(request)puts response.read_body
 response = http.request(request)puts response.read_bodyhttp = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
 ```
 
@@ -707,7 +707,7 @@ require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/or
 **cURL:**
 
 ```bash
-curl --request POST \  --url https://api.blockchain.io/api/v2/order/delete \  --header 'content-type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' \  --form id={{order_id}} \
+curl --request POST \  --url https://api.blockchain.io/api/v2/order/delete \  --header 'Authorization: Bearer {{JWT_TOKEN}}; content-type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' \  --form id={{order_id}} \
 ```
 
 
