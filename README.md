@@ -1,1353 +1,907 @@
 ![image alt text](logo.svg)
 
-**Blockchain.io API documentation v.0.1**
+# Blockchain.io HMAC API
+Version: 1.0
+Last updated: August 30th 2019
 
-# **Summary**
+----------
+# Table of contents
 
-[API Base URL](#api-base-url)
+- [HMAC Authentication : how does it work ?](#hmac-authentication-how-does-it-work)
+- [Security notice](#security-notice)
+- [How do I format request ?](#how-do-i-format-request)
+- [Public endpoints](#public-endpoints)
+- [Private endpoints](#private-endpoints)
+- [Timing security](#timing-security)
+- [Error codes](#error-codes)
 
-[Authentication](#authentication)
+----------
+## HMAC authentication : how does it work ?
 
-[Security](#security)
+Blockchain.io uses HMAC as authentication method for our API endpoints. The purpose is to sign your requests in a simple and secure fashion in order to assure maximum security.
 
-[Manual Refresh Token Workflow](#manual-refresh-token-workflow)
+*Concept is simple :*
 
-[API V2 Members Me](#apiv2membersme)
+- Each user can generate **a pair of keys**, also known as **API token**.
+- An **API token** is composed of a **public key** and a **secret key**.
+- **Public key** is passed into your request headers.
+- **Secret key** is used to sign your payload.
 
-[API V2 Markets](#apiv2markets)
+Once request has been sent, BCIO API will use your public key as a mean to retrieve your secret key from the database. Then, using fetched secret key, the API will determine the expected signature and compare it against the signature you sent. 
+If signatures match, **congratulations** : authentication has been successful !
 
-[API V2 Tickers Market](#apiv2tickersmarket)
+*cf. ‘[How do I format request ?](#how-do-i-format-request)’
 
-[API V2 Tickers](#apiv2tickers)
+----------
+## Security notice
 
-[API V2 Accounts](#apiv2accounts)
+Whereas public key can be revealed to everyone without consequences, **secret key must be kept secretly and shouldn’t be given to anyone under any circumstances**. Otherwise, you expose yourself to **security issues regarding your BCIO account**.
 
-[API V2 Accounts Currency](#apiv2accountscurrency)
+----------
+## How do I format request ?
 
-[API V2 Deposits](#apiv2deposits)
+*Since public endpoints don’t require any authentication, there is no need for API keys and therefore, no need to sign your request.* ***This section is useful for private endpoints only.***
 
-[API V2 Deposit](#apiv2deposit)
+For security purposes, every private endpoint has two mandatory and one optional parameters :
 
-[API V2 Deposit Address](#apiv2deposit_address)
+- **timestamp** (mandatory)**:** *millisecond timestamp of when the request was created and sent*
+- **recvWindow** (optional) **:** *number of milliseconds after* `timestamp` *the request is valid for*
+- **signature** (mandatory)**:** *signed payload using* *your secret key*
 
-[API V2 Orders Clear](#apiv2ordersclear)
+[You can find more informations about the importance of these parameters here.](https://paper.dropbox.com/doc/Blockchain.io-HMAC-API--Ad6ZmyJbwzwewAHMuCg9LSHnAg-tpbhArBW4Z3nj5bBN3Acm#:uid=904234565802109310384105&h2=Timing-security)
 
-[API V2 Orders](#apiv2orders)
+Your public key has to be passed in `X-BCIO-APIKEY` header field.
 
-[API V2 Orders multi](#apiv2ordersmulti)
+Here is a step-by-step example of how to send a valid signed payload from the Linux command line using `echo`, `openssl`, and `curl`.
 
-[API V2 Order Delete](#apiv2orderdelete)
+**POST** `https://api.blockchain.io/v1/order`
 
-[API V2 Order](#apiv2order)
+| **Key**    | **Value**                                                        |
+| ---------- | ---------------------------------------------------------------- |
+| public_key | vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A |
+| secret_key | NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j |
 
-[API V2 Order Book](#apiv2order_book)
+| **Parameter** | **Value**     |
+| ------------- | ------------- |
+| symbol        | LTCBTC        |
+| side          | BUY           |
+| type          | LIMIT         |
+| timeInForce   | GTC           |
+| quantity      | 1             |
+| price         | 0.1           |
+| recvWindow    | 5000          |
+| timestamp     | 1499827319559 |
 
-[API V2 Depth](#apiv2depth)
 
-[API V2 Trades My](#apiv2tradesmy)
+**Example 1: As a query string**
 
-[API V2 Trades](#apiv2trades)
 
-[API V2 K](#apiv2k)
+  - **Query string**
+  `symbol=LTCBTC&side=BUY&type=LIMIT&timeInForce=GTC&quantity=1&price=0.1&recvWindow=5000&timestamp=1499827319559`   
 
-[API V2 K with pending trades](#apiv2k_with_pending_trades)
+  - **HMAC SHA256 signature**
+    ```bash
+    $ echo -n "symbol=LTCBTC&side=BUY&type=LIMIT&timeInForce=GTC&quantity=1&price=0.1&recvWindow=5000&timestamp=1499827319559" | openssl dgst -sha256 -hmac "NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j"
+    ```
+    
+    `c8db56825ae71d6d79447849e617115f4a920fa2acdcab2b053c4b2838bd6b71`
 
-[API V2 Timestamp](#apiv2timestamp)
+  - **cURL command**
+  ```bash
+  $ curl -H "X-BCIO-APIKEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A" -X POST 'https://api.blockchain.io/v1/order?symbol=LTCBTC&side=BUY&type=LIMIT&timeInForce=GTC&quantity=1&price=0.1&recvWindow=5000&timestamp=1499827319559&signature=c8db56825ae71d6d79447849e617115f4a920fa2acdcab2b053c4b2838bd6b71'
+  ```
 
-[API V2 Fees Trading](#apiv2feestrading)
+**Example 2: As a request body**
 
-[API V2 Fees Deposit](#apiv2feesdeposit)
 
-[API V2 Fees Withdraw](#apiv2feeswithdraw)
+  - **Request body**
+    `symbol=LTCBTC&side=BUY&type=LIMIT&timeInForce=GTC&quantity=1&price=0.1&recvWindow=5000&timestamp=1499827319559`
 
-[API V2 Member Levels](#apiv2member_levels)
 
-[API V2 Currency Trades](#apiv2currencytrades)
+  - **HMAC SHA256 signature**
+    ```bash
+    $ echo -n "symbol=LTCBTC&side=BUY&type=LIMIT&timeInForce=GTC&quantity=1&price=0.1&recvWindow=5000&timestamp=1499827319559" | openssl dgst -sha256 -hmac "NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j"
+    ```
+    
+    `c8db56825ae71d6d79447849e617115f4a920fa2acdcab2b053c4b2838bd6b71`
 
-[API V2 Currencies](#apiv2currencies)
 
-[API V2 Currencies Id](#apiv2currenciesid)
+  - **cURL command**
+    ```bash
+    $ curl -H "X-BCIO-APIKEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A" -X POST 'https://api.blockchain.iohttps://api.blockchain.io/v1/order' -d 'symbol=LTCBTC&side=BUY&type=LIMIT&timeInForce=GTC&quantity=1&price=0.1&recvWindow=5000&timestamp=1499827319559&signature=c8db56825ae71d6d79447849e617115f4a920fa2acdcab2b053c4b2838bd6b71'
+    ```
 
+**Example 3: Mixed query string and request body**
 
-## **API Base URL**
 
-**[https://api.blockchain.io](https://api.beta.blockchain.io)**
+  - **Query string**
+  `symbol=LTCBTC&side=BUY&type=LIMIT&timeInForce=GTC`
 
-* * *
+  - **Request body**
+  `quantity=1&price=0.1&recvWindow=5000&timestamp=1499827319559`
+  
+  - **HMAC SHA256 signature**
+    ```bash
+    $ echo -n "symbol=LTCBTC&side=BUY&type=LIMIT&timeInForce=GTCquantity=1&price=0.1&recvWindow=5000&timestamp=1499827319559" | openssl dgst -sha256 -hmac "NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j"
+    ```
+    
+    `0fd168b8ddb4876a0358a8d14d0c9f3da0e9b20c5d52b2a00fcf7d1c602f9a77`
 
 
-## **Authentication**
+  - **cURL command**
+    ```bash
+    $ curl -H "X-BCIO-APIKEY: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A" -X POST 'https://api.blockchain.iohttps://api.blockchain.io/v1/order?symbol=LTCBTC&side=BUY&type=LIMIT&timeInForce=GTC' -d 'quantity=1&price=0.1&recvWindow=5000&timestamp=1499827319559&signature=0fd168b8ddb4876a0358a8d14d0c9f3da0e9b20c5d52b2a00fcf7d1c602f9a77'
+    ```
 
-**/api/v1/sessions**
+*Note that the signature is different in example 3. There is no ‘&' between "GTC" and "quantity=1".*
 
-* * *
+----------
+## Public endpoints
 
+**Test API connectivity**
 
-**_POST_**
+    GET https://api.blockchain.io/v1/ping
 
-**Description:**  POST request with email, password, application_id and otp_code to get the JWT token as a response for using it in others requests.
 
-**Parameters**
+- **Parameters :** NONE
+- **Response :** 
+    ```json
+    {}
+    ```
 
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|email|formData|User e-mail|Yes|string|
-|password|formData|User password (plein text)|Yes|string|
-|application_id|formData|Blockchain.io Application ID : bc2d8526e1605579340d994ef0d6|Yes|string|
-|otp_code|formData|2FA Google Authentificator code|Yes|string|
 
-**Example**
+**Check server time**
 
-**cURL :**
+    GET https://api.blockchain.io/v1/time
 
-```bash
-  curl --request POST \  --url 'https://auth.blockchain.io/api/v1/sessions?email={{user_email}}&password={{user_password}}&application_id=bc2d8526e1605579340d994ef0d6&otp_code={{otp_code}}' \  --header 'content-type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW'
-```
 
-**Ruby :**
+- **Parameters :** NONE
+- **Response :** 
+    ```json
+    {
+      "serverTime": 1499827319559
+    }
+    ```
 
-```ruby
-require 'uri'require 'net/http'url = URI("https://auth.blockchain.io/api/v1/sessions?email={{user_email}}&password={{user_password}}&application_id=bc2d8526e1605579340d994ef0d6&otp_code={{otp_code}}")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Post.new(url)response = http.request(request)puts response.read_body</td>
-```
+**Exchange trading rules and symbols informations**
 
-**Response**
+    GET https://api.blockchain.io/v1/exchangeInfo
 
-| Example of a Authentication token (JWT token) response | Type |
-|----------|----------|
-|eyJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE1MzYyNDE4NDMsImV4cCI6MTUzNjI1NjI0Mywic3ViIjoic2Vzc2lvbiIsImlzcyI6ImJhcm9uZyIsImF1ZCI6WyJwZWF0aW8iLCJiYXJvbmciXSwianRpIjoiQTZGOUQ2OUQzODExQzA1Rjg1REE3RDcwIiwidWlkIjoiSUQ2Mjc1NTAwNDE2IiwiZW1haWwiOiJzYW11ZWwuZ29tZXNAcGF5bWl1bS5jb20iLCJyb2xlIjoiYWRtaW4iLCJsZXZlbCI6NCwic3RhdGUiOiJhY3RpdmUifQ.jQoke1um5PIBiB_A1R5DNgnPhM2WO1Hgqa0bbOzMt8nKHcNBCL_KTDz9iVPJ1gVT0Z1_6Ak_oy_-SIbXLqdcn9tGiC3DR4eEXDqol84AIkNIgR9XIiQtwBESBDnK4ZLlBSGHKHu2bvUSsAm9r2eVwu0c-7L0YhxTt44cOJaHc9UKm00xL8iWsctTAFYX6YOZ265fi7wHj-JmMqtu7euU9cNtPBq-apv4gMJsTkGg-smsMCAhgp31gkCJpSvjyhDZCFXDMHCan7tT_GjVdGc66X6gllpBreghXxZD7sbBjcEdOI6fWxScYOCKaA4ppFudVGk0z5ASYNMWOpqrvYhMZw|string|
 
-## **Security**
+- **Parameters :** NONE
+- **Response :** 
+    ```json
+    {
+      "timezone": "UTC",
+      "serverTime": 1508631584636,
+      "rateLimits": [
+      ],
+      "exchangeFilters": [
+      ],
+      "symbols": [{
+        "symbol": "ETHBTC",
+        "status": "TRADING",
+        "baseAsset": "ETH",
+        "baseAssetPrecision": 8,
+        "quoteAsset": "BTC",
+        "quotePrecision": 8,
+        "orderTypes": [
+          // These are defined in the `ENUM definitions` section under `Order types (orderTypes)`.
+          // All orderTypes are optional.
+        ],
+        "icebergAllowed": false,
+        "filters": [
+        ]
+      }]
+    }
+    ```
 
-* * *
 
-**Bearer**
+**Order book depth**
 
-<table>
-  <tr>
-    <td>apiKey</td>
-    <td>API Key</td>
-  </tr>
-  <tr>
-    <td>Name</td>
-    <td>JWT</td>
-  </tr>
-  <tr>
-    <td>In</td>
-    <td>header</td>
-  </tr>
-</table>
+    GET https://api.blockchain.io/v1/depth
 
 
-## Manual refresh token workflow
+- **Parameters :**
 
-**1 : Generate Private and Public keys using Ruby :**
+| **Name** | **Type** | **Mandatory** | **Description**                                                     |
+| -------- | -------- | ------------- | ------------------------------------------------------------------- |
+| symbol   | STRING   | YES           |                                                                     |
+| limit    | INT      | NO            | Default 100; max 1000. Valid limits:[5, 10, 20, 50, 100, 500, 1000] |
 
-```bash
-ruby -e "require 'openssl'; require 'base64'; OpenSSL::PKey::RSA.generate(2048).tap { |p| puts '', 'PRIVATE RSA KEY (URL-safe Base64 encoded, PEM):', '', Base64.urlsafe_encode64(p.to_pem), '', 'PUBLIC RSA KEY (URL-safe Base64 encoded, PEM):', '', Base64.urlsafe_encode64(p.public_key.to_pem) }"</td>
-```
 
-**2 : Save both public and private keys**
 
-**3 : Create a API_KEY (only once) :**
+- **Response :**
+    ```json
+    {
+      "lastUpdateId": 1027024,
+      "bids": [
+        [
+          "4.00000000",     // PRICE
+          "431.00000000"    // QTY
+        ]
+      ],
+      "asks": [
+        [
+          "4.00000200",
+          "12.00000000"
+        ]
+      ]
+    }
+    ```
 
-```bash
-curl -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer THE_EXPIRED_OR_CURRENT_JWT_TOKEN" -d "{\"public_key\":\"YOUR_PUBLIC_KEY\", \"scopes\":\"peatio\", \"totp_code\":\"YOUR_2FA_CODE\"}" https://auth.blockchain.io/api/v1/api_keys?totp_code=YOUR_2FA_CODE
-```
 
+**Recent trades list**
 
-Save the API_KEY
+    GET https://api.blockchain.io/v1/trades
 
-**4 : Use this ruby script to sign the private key :**
 
-file : sign_script.rb
+- **Parameters** :
 
-```ruby
-require 'openssl'require 'base64'require 'json'require 'securerandom'require 'jwt'require 'active_support/time'secret_key = OpenSSL::PKey.read(Base64.urlsafe_decode64('YOUR_PRIVATE_KEY'))payload = {  iat: Time.current.to_i,  exp: 20.minutes.from_now.to_i,  sub: 'api_key_jwt',  iss: 'external',  jti: SecureRandom.hex(12).upcase}jwt_token = JWT.encode(payload, secret_key, 'RS256')puts jwt_token.to_s</td>
-```
+| **Name** | **Type** | **Mandatory** | **Description**        |
+| -------- | -------- | ------------- | ---------------------- |
+| symbol   | STRING   | YES           |                        |
+| limit    | INT      | NO            | Default 500; max 1000. |
 
-**5 : Save the script (ex : sign_script.rb)and Run it :**
 
-```bash
-  ruby sign_script.rb
-```
 
-It will output the JWT Token Request
+- **Response** :
+    ```json
+    [
+      {
+        "id": 28457,
+        "price": "4.00000100",
+        "qty": "12.00000000",
+        "time": 1499865549590,
+        "isBuyerMaker": true,
+        "isBestMatch": true
+      }
+    ]
+    ```
 
-**6 : Get the final JWT Token for using in[ blockchain.io](http://blockchain.io/) API calls :**
 
-```bash
-curl -X POST -H 'Content-Type: application/json' -d '{"kid":"YOUR_API_KEY", "jwt_token": "GENERATED_JWT_TOKEN_REQUEST"}' https://auth.blockchain.io/api/v1/sessions/generate_jwt
-```
+**Compressed/Aggregate trades list**
 
-**Response**
+    GET https://api.blockchain.io/v1/aggTrades
 
-|Example of a Authentication token (JWT token) response given by a token key| Type|
-|-----|-----|
-|`{"token":"eyJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE1Mzc0NTgwMTgsImV4cCI6MTUzNzU0NDQxOCwic3ViIjoic2Vzc2lvbiIsImlzcyI6ImJhcm9uZyIsImF1ZCI6InRyYWRlIiwianRpIjoiQ0UxQUZEMEZEMDdFQUE1RDUyMjRFRkRDIiwidWlkIjoiSUQ2Mjc1NTAwNDE2IiwiZW1haWwiOiJzYW11ZWwuZ29tZXNAcGF5bWl1bS5jb20iLCJyb2xlIjoiYWRtaW4iLCJsZXZlbCI6Mywic3RhdGUiOiJhY3RpdmUiLCJhcGlfa2lkIjoiM2Q2ODVhN2ItYWFlNS00YTZiLWJkYWItNjRhNmUzYjFhM2I2In0.x7myykg1ikdE1G1sckYCWUG7OUMi_SwaQjmCDki_fSEmBumuNE8kLwuve_wrAjzaQamxIVM6-Yu7mVvhFN5ennP0PpK1pvf45FCnYRCQGbgqyggi4VgNuKkdzvvVRh4xQ2P3iNGrAXdr-Hs5VzLL2ZsSHSoSr8LQSaq9JOZsXL31_7eWjpR8dS_I7G5pCkc8y56Iurgu4hE0uzkS31Sa_Vc6DKFSIEfvJbTHIalexBZlMx7thiH6ojPdjGLu-Vq_G3tPo4rPZ61qWLRrC5FsBps14P9sr2Cnjr5lk2yf4FF5GuL6jxAcEdu1FiVmRO3_QFdogC7l0R8GtobK-qqCkw"}`|string|
+Get compressed, aggregate trades. Trades that fill at the time, from the same order, with the same price will have the quantity aggregated.
 
 
-## /api/v2/members/me
+- **Parameters :**
 
-* * *
+| **Name**  | **Type** | **Mandatory** | **Description**                                          |
+| --------- | -------- | ------------- | -------------------------------------------------------- |
+| symbol    | STRING   | YES           |                                                          |
+| fromId    | LONG     | NO            | ID to get aggregate trades from INCLUSIVE.               |
+| startTime | LONG     | NO            | Timestamp in ms to get aggregate trades from INCLUSIVE.  |
+| endTime   | LONG     | NO            | Timestamp in ms to get aggregate trades until INCLUSIVE. |
+| limit     | INT      | NO            | Default 500; max 1000.                                   |
 
+    - If both startTime and endTime are sent, time between startTime and endTime must be less than 1 hour.
+    - If fromId, startTime, and endTime are not sent, the most recent aggregate trades will be returned.
 
-**_GET_**
 
-**Description:** Get your profile and accounts info.
+- **Response :**
+    ```json
+    [
+      {
+        "a": 26129,         // Aggregate tradeId
+        "p": "0.01633102",  // Price
+        "q": "4.70443515",  // Quantity
+        "f": 27781,         // First tradeId
+        "l": 27781,         // Last tradeId
+        "T": 1498793709153, // Timestamp
+        "m": true,          // Was the buyer the maker?
+        "M": true           // Was the trade the best price match?
+      }
+    ]
+    ```
 
-**Requirements:** Authorization Bearer Token
 
-**Example**
+**Kline/Candlestick data**
 
-**cURL:**
+    GET https://api.blockchain.io/v1/klines
 
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/members/me \  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
 
-**Ruby:**
+- **Parameters :**
 
-```bash
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/members/me")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```    
+| **Name**  | **Type** | **Mandatory** | **Description**        |
+| --------- | -------- | ------------- | ---------------------- |
+| symbol    | STRING   | YES           |                        |
+| interval  | ENUM     | YES           |                        |
+| startTime | LONG     | NO            |                        |
+| endTime   | LONG     | NO            |                        |
+| limit     | INT      | NO            | Default 500; max 1000. |
 
+- **Kline/Candlestick chart intervals:**
 
-**Responses**
+m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
 
-|Code|Description|
-|-------|---------|
-|200|Get your profile and accounts info.|
+    - 1m
+    - 3m
+    - 5m
+    - 15m
+    - 30m
+    - 1h
+    - 2h
+    - 4h
+    - 6h
+    - 8h
+    - 12h
+    - 1d
+    - 3d
+    - 1w
+    - 1M
 
 
-## **/api/v2/markets**
+- **Response :**
+    ```json
+    [
+      [
+        1499040000000,      // Open time
+        "0.01634790",       // Open
+        "0.80000000",       // High
+        "0.01575800",       // Low
+        "0.01577100",       // Close
+        "148976.11427815",  // Volume
+        1499644799999,      // Close time
+        "2434.19055334",    // Quote asset volume
+        308,                // Number of trades
+        "1756.87402397",    // Taker buy base asset volume
+        "28.46694368",      // Taker buy quote asset volume
+        "17928899.62484339" // Ignore.
+      ]
+    ]
+    ```
 
-* * *
 
-**_GET_**
+**Current average price**
 
-**Description:** Get all available markets.
+    GET https://api.blockchain.io/v1/avgPrice
 
-**Requirements:** None
 
-**Example**
+- **Parameters :**
 
-**cURL:**
+| **Name** | **Type** | **Mandatory** | **Description** |
+| -------- | -------- | ------------- | --------------- |
+| symbol   | STRING   | YES           |                 |
 
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/markets
-```
 
-**Ruby:**
 
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/markets")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
+- **Response :**
+    ```json
+    {
+      "mins": 5,
+      "price": "9.35751834"
+    }
+    ```
 
-**Responses**
+**24hr ticker price change statistics**
 
-|Code|Description|
-|-------|---------|
-|200|Get all available markets.|
+    GET https://api.blockchain.io/v1/ticker/24hr
 
 
-## /api/v2/**tickers/{market}**
+- **Parameters :**
 
-* * *
+| **Name** | **Type** | **Mandatory** | **Description** |
+| -------- | -------- | ------------- | --------------- |
+| symbol   | STRING   | NO            |                 |
 
-**_GET_**
+If the symbol is not sent, tickers for all symbols will be returned in an array.
 
-**Description:** Get ticker of specific market.
 
-**Requirements:** None
+- **Response :**
+    ```json
+    {
+      "symbol": "BNBBTC",
+      "priceChange": "-94.99999800",
+      "priceChangePercent": "-95.960",
+      "weightedAvgPrice": "0.29628482",
+      "prevClosePrice": "0.10002000",
+      "lastPrice": "4.00000200",
+      "lastQty": "200.00000000",
+      "bidPrice": "4.00000000",
+      "askPrice": "4.00000200",
+      "openPrice": "99.00000000",
+      "highPrice": "100.00000000",
+      "lowPrice": "0.10000000",
+      "volume": "8913.30000000",
+      "quoteVolume": "15.30000000",
+      "openTime": 1499783499040,
+      "closeTime": 1499869899040,
+      "firstId": 28385,   // First tradeId
+      "lastId": 28460,    // Last tradeId
+      "count": 76         // Trade count
+    }
+    ```
 
-**Parameters**
 
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|path|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at /api/api/v2/markets.|Yes|String|
+**Symbol price ticker**
 
+    GET https://api.blockchain.io/v1/ticker/price
 
-**Example**
 
-**cURL:**
+- **Parameters :**
 
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/tickers/ethbtc
-```
+| **Name** | **Type** | **Mandatory** | **Description** |
+| -------- | -------- | ------------- | --------------- |
+| symbol   | STRING   | NO            |                 |
 
-**Ruby:**
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/tickers/ethbtc")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
+If the symbol is not sent, prices for all symbols will be returned in an array.
 
-**Responses**
 
-|Code|Description|
-|-------|---------|
-|200|Get ticker of specific market.|
+- **Response :**
+    ```json
+    {
+      "symbol": "LTCBTC",
+      "price": "4.00000200"
+    }
+    ```
 
 
-## /api/v2/tickers
+**Symbol order book ticker**
 
-* * *
+    GET https://api.blockchain.io/v1/ticker/bookTicker
 
 
-**_GET_**
+- **Parameters :**
+
+| **Name** | **Type** | **Mandatory** | **Description** |
+| -------- | -------- | ------------- | --------------- |
+| symbol   | STRING   | NO            |                 |
+
+If the symbol is not sent, bookTickers for all symbols will be returned in an array.
+
+
+- **Response :**
+    ```json
+    {
+      "symbol": "LTCBTC",
+      "bidPrice": "4.00000000",
+      "bidQty": "431.00000000",
+      "askPrice": "4.00000200",
+      "askQty": "9.00000000"
+    }
+    ```
+----------
+## Private endpoints
+
+**Create order**
+
+    POST https://api.blockchain.io/v1/order
+
+
+- **Parameters :**
+
+| **Name**         | **Type** | **Mandatory** | **Description**                                                                                                                           |
+| ---------------- | -------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| symbol           | STRING   | YES           |                                                                                                                                           |
+| side             | ENUM     | YES           |                                                                                                                                           |
+| type             | ENUM     | YES           |                                                                                                                                           |
+| timeInForce      | ENUM     | NO            | Only GTC available                                                                                                                        |
+| quantity         | DECIMAL  | YES           |                                                                                                                                           |
+| price            | DECIMAL  | NO            |                                                                                                                                           |
+| newClientOrderId | STRING   | NO            | A unique id for the order. Automatically generated if not sent.                                                                           |
+| newOrderRespType | ENUM     | NO            | Set the response JSON. `ACK`, `RESULT`, or `FULL`; `MARKET` and `LIMIT` order types default to `FULL`, all other orders default to `ACK`. |
+| recvWindow       | LONG     | NO            |                                                                                                                                           |
+| timestamp        | LONG     | YES           |                                                                                                                                           |
+
+- Additional mandatory parameters based on `type`:
+
+  | **Type** | **Additional mandatory parameters** |
+  | -------- | ----------------------------------- |
+  | `LIMIT`  | `timeInForce`, `price`              |
+
+
+
+- **Response ACK :**
+    ```json
+    {
+      "symbol": "BTCUSDT",
+      "orderId": 28,
+      "clientOrderId": "6gCrw2kRUAF9CvJDGP16IP",
+      "transactTime": 1507725176595
+    }
+    ```
 
-**Description:** Get ticker of all markets.
 
-**Requirements:** None
+- **Response RESULT :**
+    ```json
+    {
+      "symbol": "BTCUSDT",
+      "orderId": 28,
+      "clientOrderId": "6gCrw2kRUAF9CvJDGP16IP",
+      "transactTime": 1507725176595,
+      "price": "1.00000000",
+      "origQty": "10.00000000",
+      "executedQty": "10.00000000",
+      "cummulativeQuoteQty": "10.00000000",
+      "status": "FILLED",
+      "timeInForce": "GTC",
+      "type": "MARKET",
+      "side": "SELL"
+    }
+    ```
+
+
+- **Response FULL :**
+    ```json
+    {
+      "symbol": "BTCUSDT",
+      "orderId": 28,
+      "clientOrderId": "6gCrw2kRUAF9CvJDGP16IP",
+      "transactTime": 1507725176595,
+      "price": "1.00000000",
+      "origQty": "10.00000000",
+      "executedQty": "10.00000000",
+      "cummulativeQuoteQty": "10.00000000",
+      "status": "FILLED",
+      "timeInForce": "GTC",
+      "type": "MARKET",
+      "side": "SELL",
+      "fills": [
+        {
+          "price": "4000.00000000",
+          "qty": "1.00000000",
+          "commission": "4.00000000",
+          "commissionAsset": "USDT"
+        },
+        {
+          "price": "3999.00000000",
+          "qty": "5.00000000",
+          "commission": "19.99500000",
+          "commissionAsset": "USDT"
+        },
+        {
+          "price": "3998.00000000",
+          "qty": "2.00000000",
+          "commission": "7.99600000",
+          "commissionAsset": "USDT"
+        },
+        {
+          "price": "3997.00000000",
+          "qty": "1.00000000",
+          "commission": "3.99700000",
+          "commissionAsset": "USDT"
+        },
+        {
+          "price": "3995.00000000",
+          "qty": "1.00000000",
+          "commission": "3.99500000",
+          "commissionAsset": "USDT"
+        }
+      ]
+    }
+    ```
+
+
+**Create order : test**
+
+    POST https://api.blockchain.io/v1/order/test
+
+Test new order creation and signature/recvWindow long. Creates and validates a new order but does not send it into the matching engine.
+
+
+- **Parameters :**
+
+
+Same as `POST https://api.blockchain.io/v1/order`
+
+
+- **Response :**
+    ```json
+    {}
+    ```
 
-**Example**
+
+**Query order**
+
+    GET https://api.blockchain.io/v1/order
+
+
+- **Parameters :**
+
+| **Name**          | **Type** | **Mandatory** | **Description** |
+| ----------------- | -------- | ------------- | --------------- |
+| symbol            | STRING   | YES           |                 |
+| orderId           | LONG     | NO            |                 |
+| origClientOrderId | STRING   | NO            |                 |
+| recvWindow        | LONG     | NO            |                 |
+| timestamp         | LONG     | YES           |                 |
+
+    - Either `orderId` or `origClientOrderId` must be sent.
+    - For some historical orders `cummulativeQuoteQty` will be < 0, meaning the data is not available at this time.
+
+
+- **Response :**
+    ```json
+    {
+      "symbol": "LTCBTC",
+      "orderId": 1,
+      "clientOrderId": "myOrder1",
+      "price": "0.1",
+      "origQty": "1.0",
+      "executedQty": "0.0",
+      "cummulativeQuoteQty": "0.0",
+      "status": "NEW",
+      "timeInForce": "GTC",
+      "type": "LIMIT",
+      "side": "BUY",
+      "stopPrice": "0.0",
+      "icebergQty": "0.0",
+      "time": 1499827319559,
+      "updateTime": 1499827319559,
+      "isWorking": true
+    }
+    ```
+
+
+**Cancel order**
+
+    DELETE https://api.blockchain.io/v1/order
+
+
+- **Parameters :**
+
+| **Name**          | **Type** | **Mandatory** | **Description**                                                            |
+| ----------------- | -------- | ------------- | -------------------------------------------------------------------------- |
+| symbol            | STRING   | YES           |                                                                            |
+| orderId           | LONG     | NO            |                                                                            |
+| origClientOrderId | STRING   | NO            |                                                                            |
+| newClientOrderId  | STRING   | NO            | Used to uniquely identify this cancel. Automatically generated by default. |
+| recvWindow        | LONG     | NO            |                                                                            |
+| timestamp         | LONG     | YES           |                                                                            |
+
+    - Either `orderId` or `origClientOrderId` must be sent.
+
+
+- **Response :**
+    ```json
+    {
+      "symbol": "LTCBTC",
+      "orderId": 28,
+      "origClientOrderId": "myOrder1",
+      "clientOrderId": "cancelMyOrder1",
+      "transactTime": 1507725176595,
+      "price": "1.00000000",
+      "origQty": "10.00000000",
+      "executedQty": "8.00000000",
+      "cummulativeQuoteQty": "8.00000000",
+      "status": "CANCELED",
+      "timeInForce": "GTC",
+      "type": "LIMIT",
+      "side": "SELL"
+    }
+    ```
+
+
+**Current open orders**
+
+    GET https://api.blockchain.io/v1/openOrders  (HMAC SHA256)
+
+
+- **Parameters :**
+
+| **Name**   | **Type** | **Mandatory** | **Description** |
+| ---------- | -------- | ------------- | --------------- |
+| symbol     | STRING   | NO            |                 |
+| recvWindow | LONG     | NO            |                 |
+| timestamp  | LONG     | YES           |                 |
+
+    - If the symbol is not sent, orders for all symbols will be returned in an array.
+
+
+- **Response :**
+    ```json
+    [
+      {
+        "symbol": "LTCBTC",
+        "orderId": 1,
+        "clientOrderId": "myOrder1",
+        "price": "0.1",
+        "origQty": "1.0",
+        "executedQty": "0.0",
+        "cummulativeQuoteQty": "0.0",
+        "status": "NEW",
+        "timeInForce": "GTC",
+        "type": "LIMIT",
+        "side": "BUY",
+        "stopPrice": "0.0",
+        "icebergQty": "0.0",
+        "time": 1499827319559,
+        "updateTime": 1499827319559,
+        "isWorking": true
+      }
+    ]
+    ```
+
+
+**All orders**
+
+    GET https://api.blockchain.io/v1/allOrders
+
+Get all account orders; active, canceled, or filled.
+
+- **Parameters :**
+
+| **Name**   | **Type** | **Mandatory** | **Description**        |
+| ---------- | -------- | ------------- | ---------------------- |
+| symbol     | STRING   | YES           |                        |
+| orderId    | LONG     | NO            |                        |
+| startTime  | LONG     | NO            |                        |
+| endTime    | LONG     | NO            |                        |
+| limit      | INT      | NO            | Default 500; max 1000. |
+| recvWindow | LONG     | NO            |                        |
+| timestamp  | LONG     | YES           |                        |
+
+    - If `orderId` is set, it will get orders >= that `orderId`. Otherwise most recent orders are returned.
+    - For some historical orders `cummulativeQuoteQty` will be < 0, meaning the data is not available at this time.
+
+
+- **Response :**
+    ```json
+    [
+      {
+        "symbol": "LTCBTC",
+        "orderId": 1,
+        "clientOrderId": "myOrder1",
+        "price": "0.1",
+        "origQty": "1.0",
+        "executedQty": "0.0",
+        "cummulativeQuoteQty": "0.0",
+        "status": "NEW",
+        "timeInForce": "GTC",
+        "type": "LIMIT",
+        "side": "BUY",
+        "stopPrice": "0.0",
+        "icebergQty": "0.0",
+        "time": 1499827319559,
+        "updateTime": 1499827319559,
+        "isWorking": true
+      }
+    ]
+    ```
+
+
+**Account information**
+
+    GET https://api.blockchain.io/v1/account
+
+
+- **Parameters :**
+
+| **Name**   | **Type** | **Mandatory** | **Description** |
+| ---------- | -------- | ------------- | --------------- |
+| recvWindow | LONG     | NO            |                 |
+| timestamp  | LONG     | YES           |                 |
+
+
+
+- **Response :**
+    ```json
+    {
+      "makerCommission": 15,
+      "takerCommission": 15,
+      "buyerCommission": 0,
+      "sellerCommission": 0,
+      "canTrade": true,
+      "canWithdraw": true,
+      "canDeposit": true,
+      "updateTime": 123456789,
+      "balances": [
+        {
+          "asset": "BTC",
+          "free": "4723846.89208129",
+          "locked": "0.00000000"
+        },
+        {
+          "asset": "LTC",
+          "free": "4763368.68006011",
+          "locked": "0.00000000"
+        }
+      ]
+    }
+    ```
 
-**cURL:**
 
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/tickers
-```
+**Account trade list**
 
-**Ruby:**
+    GET https://api.blockchain.io/v1/myTrades
 
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/tickers")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
 
+- **Parameters :**
 
-**Responses**
+| **Name**   | **Type** | **Mandatory** | **Description**                                         |
+| ---------- | -------- | ------------- | ------------------------------------------------------- |
+| symbol     | STRING   | YES           |                                                         |
+| startTime  | LONG     | NO            |                                                         |
+| endTime    | LONG     | NO            |                                                         |
+| fromId     | LONG     | NO            | TradeId to fetch from. Default gets most recent trades. |
+| limit      | INT      | NO            | Default 500; max 1000.                                  |
+| recvWindow | LONG     | NO            |                                                         |
+| timestamp  | LONG     | YES           |                                                         |
 
-|Code|Description|
-|-------|---------|
-|200|Get ticker of all markets.|
+    - If `fromId` is set, it will get orders >= that `fromId`. Otherwise most recent orders are returned.
 
 
-## /api/v2/**accounts**
+- **Response :**
+    ```json
+    [
+      {
+        "symbol": "BNBBTC",
+        "id": 28457,
+        "orderId": 100234,
+        "price": "4.00000100",
+        "qty": "12.00000000",
+        "quoteQty": "48.000012",
+        "commission": "10.10000000",
+        "commissionAsset": "BNB",
+        "time": 1499865549590,
+        "isBuyer": true,
+        "isMaker": false,
+        "isBestMatch": true
+      }
+    ]
+    ```
+----------
 
-* * *
 
+## Timing security
 
-**_GET_**
+A private endpoint requires a parameter, `timestamp`, to be sent which should be the millisecond timestamp when the request was created and sent.
+An additional parameter, `recvWindow`, may be sent to specify the number of milliseconds after `timestamp` the request is valid for. If `recvWindow` is not sent, **it defaults to 5000**.
 
-**Description:** Get your accounts info.
+Logic is as follows:
 
-**Requirements:** Authorization Bearer Token
+    if (timestamp < (serverTime + 1000) && (serverTime - timestamp) <= recvWindow) {
+      // process request
+    } else {
+      // reject request
+    }
 
-**Example**
+**Serious trading is about timing.** Networks can be unstable and unreliable, which can lead to requests taking varying amounts of time to reach the servers. With `recvWindow`, you can specify that the request must be processed within a certain number of milliseconds or be rejected by the server.
+It recommended to use **a small recvWindow of 5000 or less!**
 
-**cURL:**
+----------
+## Error codes
 
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/accounts \  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
+**-1022 INVALID_SIGNATURE**
 
-**Ruby:**
+- Signature for this request is not valid.
 
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/accounts")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
+**-1102 MANDATORY_PARAM_EMPTY_OR_MALFORMED**
 
+- A mandatory parameter was not sent, was empty/null, or malformed.
+- Mandatory parameter '%s' was not sent, was empty/null, or malformed.
 
-**Responses**
+**-1104 UNREAD_PARAMETERS**
 
-|Code|Description|
-|-------|---------|
-|200|Get your profile and accounts info.|
+- Not all sent parameters were read.
 
+**-1112 NO_DEPTH**
 
-## /api/v2/**accounts/{currency}**
+- No orders on book for symbol.
 
-* * *
+**-1115 INVALID_TIF**
 
+- Invalid timeInForce.
 
-**_GET_**
+**-1116 INVALID_ORDER_TYPE**
 
-**Description:** Get your accounts info filtered by currency.
+- Invalid orderType.
 
-**Requirements:** Authorization Bearer Token
+**-1117 INVALID_SIDE**
 
-**Example**
+- Invalid side.
 
-**cURL:**
+**-1120 BAD_INTERVAL**
 
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/accounts/btc \  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
+- Invalid interval.
 
+**-1121 BAD_SYMBOL**
 
-**Ruby:**
+- Invalid symbol.
 
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/accounts/btc")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
+**-2013 NO_SUCH_ORDER**
 
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get your accounts info filtered by currency.|
-
-## /api/v2/**deposits**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get your deposits history.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-|Name|Located In|Decription|Required|Schema|
-|----|----------|----------|--------|------|
-|currency|query|Currency value contains BCH, BTC, ETH, LTC, XRP|No|string|
-|limit|query|Set result limit.|No|integer|
-|state|query|Filter by "submitted", "canceled", "rejected" or "accepted"|No|string|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url 'https://api.blockchain.io/api/v2/deposits?currency=btc&limit=10&state=accepted' \  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/deposits?currency=btc&limit=10&state=accepted")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get your deposits history.|
-
-
-## /api/v2/deposit
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get details of specific deposit.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-|Name|Located In|Decription|Required|Schema|
-|----|----------|----------|--------|------|
-|txid|query||Yes|string|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url 'https://api.blockchain.io/api/v2/deposit?txid={{TXID}}' \  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/deposit?txid={{TXID}}")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get details of specific deposit.|
-
-
-## /api/v2/**deposit_address**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Returns deposit address for account you want to deposit to. The address may be blank because address generation process is still in progress. If this case you should try again later.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-|Name|Located In|Decription|Required|Schema|
-|----|----------|----------|--------|------|
-|currency|query|The account you want to deposit to.|Yes|string|
-|address_format|query|Address format legacy/cash|No|string|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url 'https://api.blockchain.io/api/v2/deposit_address?currency=eth' \  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
-
-
-**Ruby:**
-
-```bash
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/deposit_address?currency=eth")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-
-|Code|Description|
-|-------|---------|
-|200|Returns deposit address for account you want to deposit to. The address may be blank because address generation process is still in progress. If this case you should try again later.|
-
-
-## **/api/v2/orders/clear**
-
-* * *
-
-
-**_POST_**
-
-**Description:** Cancel all my orders.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|side|formData|If present, only sell orders (asks) or buy orders (bids) will be cancelled.|No|String|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request POST \  --url 'https://api.blockchain.io/api/v2/orders/clear?side=asks' \  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/orders/clear?side=asks")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Post.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body</td>
-```
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|201|Cancel all my orders.|
-
-
-## **/api/v2/orders**
-
-* * *
-
-
-**_POST_**
-
-**Description:** Create a Sell/Buy order.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|formData|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at /api/api/v2/markets.|Yes|String|
-|side|formData|Either 'sell' or 'buy'.|Yes|string|
-|volume|formData|The amount user want to sell/buy. An order could be partially executed, e.g. an order sell 5 btc can be matched with a buy 3 btc order, left 2 btc to be sold; in this case the order's volume would be '5.0', its remaining_volume would be '2.0', its executed volume is '3.0'.|Yes|float|
-|order_type|formData|Either 'market' or 'limit' |No|string|
-|price|formData|Price for each unit. e.g. If you want to sell/buy 1 btc at 3000 usd, the price is '3000.0'|Yes|float|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request POST \  --url https://api.blockchain.io/api/v2/orders \  --header 'Authorization: Bearer {{JWT_TOKEN}}; content-type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' \  --form market=ethbtc \  --form side=sell \  --form volume=5 \  --form order_type=limit \  --form price=0.1
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/orders")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Post.new(url)request.body = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"market\"\r\n\r\nethbtc\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"side\"\r\n\r\nsell\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"volume\"\r\n\r\n5\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"order_type\"\r\n\r\nlimit\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"price\"\r\n\r\n0.1\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"response = http.request(request)puts response.read_bodyhttp = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-
-|Code|Description|
-|-------|---------|
-|201|Create a Sell/Buy order.|
-
-
-**_GET_**
-
-**Description:** Get your orders, results is paginated.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|query|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at /api/api/v2/markets.|Yes|string|
-|state|query|Filter order by "wait", "done" or "cancel"|No|string|
-|limit|query|Limit the number of returned orders, default to 100.|No|integer|
-|page|query|Specify the page of paginated results.|No|integer|
-|order_by|query|If set, returned orders will be sorted in specific order, default to 'asc'.|No|string|
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url 'https://api.blockchain.io/api/v2/orders?market=ethbtc&state=wait&limit=10 \  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/orders?market=ethbtc&state=wait&limit=10")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get your orders, results is paginated.|
-
-
-## **/api/v2/orders/multi**
-
-* * *
-
-
-**_POST_**
-
-**Description:** Create multiple sell/buy orders.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|formData|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at /api/api/v2/markets.|Yes|string|
-|orders[side]|formData|Either 'sell' or 'buy'.|Yes|[ string ]|
-|orders[volume]|formData|The amount user want to sell/buy. An order could be partially executed, e.g. an order sell 5 BTC can be matched with a buy 3 BTC order, left 2 BTC to be sold; in this case the order's volume would be '5.0', its remaining_volume would be '2.0', its executed volume is '3.0'.|Yes|[ float ]|
-|orders[order_type]|formData||No|[ string ]|
-|orders[price]|formData|Price for each unit. e.g. If you want to sell/buy 1 BTC at 10 ETH, the price is '10.0'|Yes|[ float ]|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request POST \  --url https: /api.blockchain.io/api/v2/orders/multi \  --header 'Authorization: Bearer {{JWT_TOKEN}}; Content-Type: application/json' \  --data '{ "market": "ethbtc", "orders": [	 {		 "side": "sell",		 "volume": 0.1,		 "order_type": "limit",		 "price": 10	 } ]}
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/orders/multi")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Post.new(url)request["Content-Type"] = 'application/json'request.body = "{\n \"market\": \"ethbtc\",\n \"orders\": [\n\t {\n\t\t \"side\": \"sell\",\n\t\t \"volume\": 0.1,\n\t\t \"order_type\": \"limit\",\n\t\t \"price\": 10\n\t }\n ]\n}\n "response = http.request(request)puts response.read_body
-response = http.request(request)puts response.read_bodyhttp = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|201|Create multiple sell/buy orders.|
-
-
-## **/api/v2/order/delete**
-
-* * *
-
-
-**_POST_**
-
-**Description:** Cancel an order.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|id|formData|Unique order id.|Yes|integer|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request POST \  --url https://api.blockchain.io/api/v2/order/delete \  --header 'Authorization: Bearer {{JWT_TOKEN}}; content-type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' \  --form id={{order_id}} \
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/order/delete")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Post.new(url)request.body = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"id\"\r\n\r\n{{order_id}}\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data;
-response = http.request(request)puts response.read_bodyhttp = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|201|Cancel an order.|
-
-## /api/v2/**order**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get information of specified order.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|id|query|Unique order id.|Yes|integer|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url 'https://api.blockchain.io/api/v2/order?id={{order_id}} \  
-  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
-
-
-**Ruby:**
-
-```bash
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/order?id={{order_id}}")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get information of specified order.|
-
-
-## **/api/v2/order_book**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get the order book of specified market.
-
-**Requirements:** None
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|query|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at /api/api/v2/markets.|Yes|string|
-|asks_limit|query|Limit the number of returned sell orders. Default to 20.|No|integer|
-|bids_limit|query|Limit the number of returned buy orders. Default to 20.|No|integer|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/order_book?market=ethbtc&asks_limit=10
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/order_book?market=ethbtc&asks_limit=10")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get the order book of specified market.|
-
-
-## **/api/v2/depth**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get depth or specified market. Both asks and bids are sorted from highest price to lowest.
-
-**Requirements:** None
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/depth?market=ethbtc&limit=2
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/depth?market=ethbtc&limit=2")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|query|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at /api/api/v2/markets.|Yes|string|
-|limit|query|Limit the number of returned price levels. Default to 300.|No|integer|
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get depth or specified market. Both asks and bids are sorted from highest price to lowest.|
-
-
-## **/api/v2/trades/my**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get your executed trades. Trades are sorted in reverse creation order.
-
-**Requirements:** Authorization Bearer Token
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|query|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at /api/api/v2/markets.|Yes|string|
-|limit|query|Limit the number of returned trades. Default to 50.|No|integer|
-|timestamp|query|An integer represents the seconds elapsed since Unix epoch. If set, only trades executed before the time will be returned.|No|integer|
-|from|query|Trade id. If set, only trades created after the trade will be returned.|No|integer|
-|to|query|Trade id. If set, only trades created before the trade will be returned.|No|integer|
-|order_by|query|If set, returned trades will be sorted in specific order, default to 'desc'.|No|string|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url 'https://api.blockchain.io/api/v2/trades/my?market=ethbtc&limit=100 \  
-  --header 'Authorization: Bearer {{JWT_TOKEN}}'
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/trades/my?market=ethbtc&limit=100")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)request["Authorization"] = 'Bearer {{JWT_TOKEN}}'response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get your executed trades. Trades are sorted in reverse creation order.|
-
-
-## **/api/v2/trades**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get recent trades on market, each trade is included only once. Trades are sorted in reverse creation order.
-
-**Requirements:** None
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|query|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at v2/markets.|Yes|string|
-|limit|query|Limit the number of returned trades. Default to 50.|No|integer|
-|timestamp|query|An integer represents the seconds elapsed since Unix epoch. If set, only trades executed before the time will be returned.|No|integer|
-|from|query|Trade id. If set, only trades created after the trade will be returned.|No|integer|
-|to|query|Trade id. If set, only trades created before the trade will be returned.|No|integer|
-|order_by|query|If set, returned trades will be sorted in specific order, default to 'desc'.|No|string|
-
-
-**Example**
-
-**cURL:**
-
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/trades?market=ethbtc&limit=50
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/trades?market=ethbtc&limit=50")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get recent trades on market, each trade is included only once. Trades are sorted in reverse creation order.|
-
-
-## **/api/v2/k**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get OHLC(k line) of specific market.
-
-**Requirements:** None
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|query|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at /api/v2/markets.|Yes|string|
-|limit|query|Limit the number of returned data points, default to 30.|No|integer|
-|period|query|Time period of K line, default to 1. You can choose between 1, 5, 15, 30, 60, 120, 240, 360, 720, 1440, 4320, 10080|No|integer|
-|time_from|query|An integer represents the seconds elapsed since Unix epoch. If set, only k-line data after that time will be returned.|No|integer|
-|time_to|query|An integer represents the seconds elapsed since Unix epoch. If set, only k-line data till that time will be returned.|No|integer|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/k?market=ethbtc&limit=50
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/k?market=ethbtc&limit=50")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get OHLC(k line) of specific market.|
-
-
-## /api/v2/**k_with_pending_trades**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get K data with pending trades, which are the trades not included in K data yet, because there's delay between trade generated and processed by K data generator.
-
-**Requirements:** None
-
-**Parameters**
-
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|market|query|Unique market id. It's always in the form of xxxyyy, where xxx is the base currency code, yyy is the quote currency code, e.g. 'ETHBTC'. All available markets can be found at /api/api/v2/markets.|Yes|string|
-|trade_id|query|The trade id of the first trade you received.|Yes|integer|
-|limit|query|Limit the number of returned data points, default to 30.|No|integer|
-|period|query|Time period of K line, default to 1. You can choose between 1, 5, 15, 30, 60, 120, 240, 360, 720, 1440, 4320, 10080|No|integer|
-|time_from|query|An integer represents the seconds elapsed since Unix epoch. If set, only k-line data after that time will be returned.|No|integer|
-|time_to|query|An integer represents the seconds elapsed since Unix epoch. If set, only k-line data till that time will be returned.|No|integer|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/k_with_pending_trades?market=ethbtc&trade_id={{trade_id}}
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/k_with_pending_trades?market=ethbtc&trade_id={{trade_id}}")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get K data with pending trades, which are the trades not included in K data yet, because there's delay between trade generated and processed by K data generator.|
-
-
-## **/api/v2/timestamp**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get server current time, in seconds since Unix epoch.
-
-**Requirements:** None
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/timestamp
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/timestamp")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get server current time, in seconds since Unix epoch.|
-
-
-## **/api/v2/fees/trading**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Returns trading fees for markets.
-
-**Requirements:** None
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/fees/trading
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/fees/trading")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Returns trading fees for markets.|
-
-
-## **/api/v2/fees/deposit**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Returns deposit fees for currencies.
-
-**Requirements:** None
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/fees/deposit
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/fees/deposit")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Returns deposit fees for currencies.|
-
-
-## **/api/v2/fees/withdraw**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Returns withdraw fees for currencies.
-
-**Requirements:** None
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/fees/withdraw
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/fees/withdraw")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Returns withdraw fees for currencies.|
-
-
-## **/api/v2/member_levels**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Returns list of member levels and the privileges they provide.
-
-**Requirements:** None
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/member_levels
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/member_levels")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Returns list of member levels and the privileges they provide.|
-
-
-## **/api/v2/currency/trades**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get currency trades at last 24h
-
-**Requirements:** None
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|currency|query||Yes|string|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/currency/trades?currency=eth
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/currency/trades?currency=eth")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|
-|-------|---------|
-|200|Get currency trades at last 24h|
-
-
-## **/api/v2/currencies**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get list of currencies
-
-**Requirements:** None
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|type|query|Currency type|No|string|
-
-
-**Example**
-
-**cURL:**
-
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/currencies
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/currencies")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|Schema|
-|----|-----------|------|
-|200|Get list of currencies|[ Currency ]|
-
-
-## **/api/v2/currencies/{id}**
-
-* * *
-
-
-**_GET_**
-
-**Description:** Get a currency
-
-**Requirements:** None
-
-**Parameters**
-
-|Name|Located In|Description|Required|Schema|
-|----|----------|-----------|--------|------|
-|path|Currency code.|Yes|string|
-
-
-**Example**
-
-**cURL:**
-
-```bash
-curl --request GET \  --url https://api.blockchain.io/api/v2/currencies/btc
-```
-
-
-**Ruby:**
-
-```ruby
-require 'uri'require 'net/http'url = URI("https://api.blockchain.io/api/v2/currencies/btc")http = Net::HTTP.new(url.host, url.port)request = Net::HTTP::Get.new(url)response = http.request(request)puts response.read_body
-```
-
-
-**Responses**
-
-|Code|Description|Schema|
-|----|-----------|------|
-|200|Get a currency|Currency|
-
-
-**Models**
-
-* * *
-
-
-**Currency**
-
-Get a currency
-
-|Name|Type|Description|Required|
-|----|----|-----------|--------|
-|id|string|Currency code.|No|
-|symbol|string|Currency symbol|No|
-|type|string|Currency type|No|
-|deposit_fee|string|Currency deposit fee|No|
-|withdraw_fee|string|Currency withdraw fee|No|
-|quick_withdraw_limit|string|Currency quick withdraw limit|No|
-|base_factor|string|Currency base factor|No|
-|precision|string|Currency precision|No|
-|icon_url|string|Currency icon|No|
+- Order does not exist.
