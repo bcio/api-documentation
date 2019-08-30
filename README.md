@@ -47,7 +47,7 @@ Blockchain.io uses HMAC as authentication method for our API endpoints. The purp
 Once request has been sent, BCIO API will use your public key as a mean to retrieve your secret key from the database. Then, using fetched secret key, the API will determine the expected signature and compare it against the signature you sent. 
 If signatures match, **congratulations** : authentication has been successful !
 
-*cf. ‘[How do I format request ?](#how-do-i-format-request)’
+*cf. ‘[How do I format request ?](#how-do-i-format-request-)’
 
 ## Security notice
 
