@@ -159,7 +159,7 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
 
 - **Parameters :** NONE
 - **Response :** 
-    ```json
+    ```javascript
     {}
     ```
 ---
@@ -170,7 +170,7 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
 
 - **Parameters :** NONE
 - **Response :** 
-    ```json
+    ```javascript
     {
       "serverTime": 1499827319559
     }
@@ -183,7 +183,7 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
 
 - **Parameters :** NONE
 - **Response :** 
-    ```json
+    ```javascript
     {
       "timezone": "UTC",
       "serverTime": 1508631584636,
@@ -222,7 +222,7 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
 | limit    | INT      | NO            | Default 100; max 1000. Valid limits:[5, 10, 20, 50, 100, 500, 1000] |
 
 - **Response :**
-    ```json
+    ```javascript
     {
       "lastUpdateId": 1027024,
       "bids": [
@@ -255,7 +255,7 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
 
 
 - **Response** :
-    ```json
+    ```javascript
     [
       {
         "id": 28457,
@@ -290,7 +290,7 @@ Get compressed, aggregate trades. Trades that fill at the time, from the same or
 
 
 - **Response :**
-    ```json
+    ```javascript
     [
       {
         "a": 26129,         // Aggregate tradeId
@@ -342,7 +342,7 @@ m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
 
 
 - **Response :**
-    ```json
+    ```javascript
     [
       [
         1499040000000,      // Open time
@@ -375,7 +375,7 @@ m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
 
 
 - **Response :**
-    ```json
+    ```javascript
     {
       "mins": 5,
       "price": "9.35751834"
@@ -397,7 +397,7 @@ If the symbol is not sent, tickers for all symbols will be returned in an array.
 
 
 - **Response :**
-    ```json
+    ```javascript
     {
       "symbol": "BNBBTC",
       "priceChange": "-94.99999800",
@@ -436,7 +436,7 @@ If the symbol is not sent, prices for all symbols will be returned in an array.
 
 
 - **Response :**
-    ```json
+    ```javascript
     {
       "symbol": "LTCBTC",
       "price": "4.00000200"
@@ -458,7 +458,7 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
 
 
 - **Response :**
-    ```json
+    ```javascript
     {
       "symbol": "LTCBTC",
       "bidPrice": "4.00000000",
@@ -499,7 +499,7 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
 
 
 - **Response ACK :**
-    ```json
+    ```javascript
     {
       "symbol": "BTCUSDT",
       "orderId": 28,
@@ -510,7 +510,7 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
 
 
 - **Response RESULT :**
-    ```json
+    ```javascript
     {
       "symbol": "BTCUSDT",
       "orderId": 28,
@@ -529,7 +529,7 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
 
 
 - **Response FULL :**
-    ```json
+    ```javascript
     {
       "symbol": "BTCUSDT",
       "orderId": 28,
@@ -592,7 +592,7 @@ Same as `POST https://api.blockchain.io/v1/order`
 
 
 - **Response :**
-    ```json
+    ```javascript
     {}
     ```
 ---
@@ -616,7 +616,7 @@ Same as `POST https://api.blockchain.io/v1/order`
 
 
 - **Response :**
-    ```json
+    ```javascript
     {
       "symbol": "LTCBTC",
       "orderId": 1,
@@ -657,7 +657,7 @@ Same as `POST https://api.blockchain.io/v1/order`
 
 
 - **Response :**
-    ```json
+    ```javascript
     {
       "symbol": "LTCBTC",
       "orderId": 28,
@@ -692,7 +692,7 @@ Same as `POST https://api.blockchain.io/v1/order`
 
 
 - **Response :**
-    ```json
+    ```javascript
     [
       {
         "symbol": "LTCBTC",
@@ -738,7 +738,7 @@ Get all account orders; active, canceled, or filled.
 
 
 - **Response :**
-    ```json
+    ```javascript
     [
       {
         "symbol": "LTCBTC",
@@ -776,7 +776,7 @@ Get all account orders; active, canceled, or filled.
 
 
 - **Response :**
-    ```json
+    ```javascript
     {
       "makerCommission": 15,
       "takerCommission": 15,
@@ -822,7 +822,7 @@ Get all account orders; active, canceled, or filled.
 
 
 - **Response :**
-    ```json
+    ```javascript
     [
       {
         "symbol": "BNBBTC",
