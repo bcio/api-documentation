@@ -4,18 +4,35 @@
 Version: 1.0  
 Last updated: August 30th 2019
 
-----------
 # Table of contents
 
-- [HMAC Authentication : how does it work ?](#hmac-authentication-how-does-it-work)
+- [HMAC Authentication : how does it work ?](#hmac-authentication--how-does-it-work-)
 - [Security notice](#security-notice)
-- [How do I format request ?](#how-do-i-format-request)
+- [How do I format request ?](#how-do-i-format-request-)
 - [Public endpoints](#public-endpoints)
+  - [GET /ping](#test-api-connectivity)
+  - [GET /time](#check-server-time)
+  - [GET /exchangeInfo](#exchange-trading-rules-and-symbols-informations)
+  - [GET /depth](#order-book-depth)
+  - [GET /trades](#recent-trades-list)
+  - [GET /aggTrades](#compressedaggregate-trades-list)
+  - [GET /klines](#klinecandlestick-data)
+  - [GET /avgPrice](#current-average-price)
+  - [GET /ticker/24hr](#24hr-ticker-price-change-statistics)
+  - [GET /ticker/price](#symbol-price-ticker)
+  - [GET /ticker/bookTicker](#symbol-order-book-ticker)
 - [Private endpoints](#private-endpoints)
+  - [POST /order](#create-order)
+  - [POST /order/test](#create-order--test)
+  - [GET /order](#query-order)
+  - [DEL /order](#cancel-order)
+  - [GET /openOrders](#current-open-orders)
+  - [GET /allOrders](#all-orders)
+  - [GET /account](#account-information)
+  - [GET /myTrades](#account-trade-list)
 - [Timing security](#timing-security)
 - [Error codes](#error-codes)
 
-----------
 ## HMAC authentication : how does it work ?
 
 Blockchain.io uses HMAC as authentication method for our API endpoints. The purpose is to sign your requests in a simple and secure fashion in order to assure maximum security.
@@ -32,12 +49,10 @@ If signatures match, **congratulations** : authentication has been successful !
 
 *cf. ‘[How do I format request ?](#how-do-i-format-request)’
 
-----------
 ## Security notice
 
 Whereas public key can be revealed to everyone without consequences, **secret key must be kept secretly and shouldn’t be given to anyone under any circumstances**. Otherwise, you expose yourself to **security issues regarding your BCIO account**.
 
-----------
 ## How do I format request ?
 
 *Since public endpoints don’t require any authentication, there is no need for API keys and therefore, no need to sign your request.* ***This section is useful for private endpoints only.***
@@ -135,10 +150,9 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
 
 *Note that the signature is different in example 3. There is no ‘&' between "GTC" and "quantity=1".*
 
-----------
 ## Public endpoints
 
-**Test API connectivity**
+#### Test API connectivity
 
     GET https://api.blockchain.io/v1/ping
 
@@ -148,9 +162,8 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
     ```json
     {}
     ```
-
-
-**Check server time**
+---
+#### Check server time
 
     GET https://api.blockchain.io/v1/time
 
@@ -162,8 +175,8 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
       "serverTime": 1499827319559
     }
     ```
-
-**Exchange trading rules and symbols informations**
+---
+#### Exchange trading rules and symbols informations
 
     GET https://api.blockchain.io/v1/exchangeInfo
 
@@ -195,9 +208,8 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
       }]
     }
     ```
-
-
-**Order book depth**
+---
+#### Order book depth
 
     GET https://api.blockchain.io/v1/depth
 
@@ -208,8 +220,6 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
 | -------- | -------- | ------------- | ------------------------------------------------------------------- |
 | symbol   | STRING   | YES           |                                                                     |
 | limit    | INT      | NO            | Default 100; max 1000. Valid limits:[5, 10, 20, 50, 100, 500, 1000] |
-
-
 
 - **Response :**
     ```json
@@ -229,9 +239,8 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
       ]
     }
     ```
-
-
-**Recent trades list**
+---
+#### Recent trades list
 
     GET https://api.blockchain.io/v1/trades
 
@@ -258,9 +267,8 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
       }
     ]
     ```
-
-
-**Compressed/Aggregate trades list**
+---
+#### Compressed/Aggregate trades list
 
     GET https://api.blockchain.io/v1/aggTrades
 
@@ -296,9 +304,8 @@ Get compressed, aggregate trades. Trades that fill at the time, from the same or
       }
     ]
     ```
-
-
-**Kline/Candlestick data**
+---
+#### Kline/Candlestick data
 
     GET https://api.blockchain.io/v1/klines
 
@@ -353,9 +360,8 @@ m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
       ]
     ]
     ```
-
-
-**Current average price**
+---
+#### Current average price
 
     GET https://api.blockchain.io/v1/avgPrice
 
@@ -375,8 +381,8 @@ m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
       "price": "9.35751834"
     }
     ```
-
-**24hr ticker price change statistics**
+---
+#### 24hr ticker price change statistics
 
     GET https://api.blockchain.io/v1/ticker/24hr
 
@@ -414,9 +420,8 @@ If the symbol is not sent, tickers for all symbols will be returned in an array.
       "count": 76         // Trade count
     }
     ```
-
-
-**Symbol price ticker**
+---
+#### Symbol price ticker
 
     GET https://api.blockchain.io/v1/ticker/price
 
@@ -437,9 +442,8 @@ If the symbol is not sent, prices for all symbols will be returned in an array.
       "price": "4.00000200"
     }
     ```
-
-
-**Symbol order book ticker**
+---
+#### Symbol order book ticker
 
     GET https://api.blockchain.io/v1/ticker/bookTicker
 
@@ -463,10 +467,10 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
       "askQty": "9.00000000"
     }
     ```
-----------
+
 ## Private endpoints
 
-**Create order**
+#### Create order
 
     POST https://api.blockchain.io/v1/order
 
@@ -573,9 +577,8 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
       ]
     }
     ```
-
-
-**Create order : test**
+---
+#### Create order : test
 
     POST https://api.blockchain.io/v1/order/test
 
@@ -592,9 +595,8 @@ Same as `POST https://api.blockchain.io/v1/order`
     ```json
     {}
     ```
-
-
-**Query order**
+---
+#### Query order
 
     GET https://api.blockchain.io/v1/order
 
@@ -634,9 +636,8 @@ Same as `POST https://api.blockchain.io/v1/order`
       "isWorking": true
     }
     ```
-
-
-**Cancel order**
+---
+#### Cancel order
 
     DELETE https://api.blockchain.io/v1/order
 
@@ -673,9 +674,8 @@ Same as `POST https://api.blockchain.io/v1/order`
       "side": "SELL"
     }
     ```
-
-
-**Current open orders**
+---
+#### Current open orders
 
     GET https://api.blockchain.io/v1/openOrders  (HMAC SHA256)
 
@@ -714,9 +714,8 @@ Same as `POST https://api.blockchain.io/v1/order`
       }
     ]
     ```
-
-
-**All orders**
+---
+#### All orders
 
     GET https://api.blockchain.io/v1/allOrders
 
@@ -761,9 +760,8 @@ Get all account orders; active, canceled, or filled.
       }
     ]
     ```
-
-
-**Account information**
+---
+#### Account information
 
     GET https://api.blockchain.io/v1/account
 
@@ -802,9 +800,8 @@ Get all account orders; active, canceled, or filled.
       ]
     }
     ```
-
-
-**Account trade list**
+---
+#### Account trade list
 
     GET https://api.blockchain.io/v1/myTrades
 
@@ -843,9 +840,7 @@ Get all account orders; active, canceled, or filled.
       }
     ]
     ```
-----------
-
-
+---
 ## Timing security
 
 A private endpoint requires a parameter, `timestamp`, to be sent which should be the millisecond timestamp when the request was created and sent.
@@ -862,7 +857,6 @@ Logic is as follows:
 **Serious trading is about timing.** Networks can be unstable and unreliable, which can lead to requests taking varying amounts of time to reach the servers. With `recvWindow`, you can specify that the request must be processed within a certain number of milliseconds or be rejected by the server.
 It recommended to use **a small recvWindow of 5000 or less!**
 
-----------
 ## Error codes
 
 **-1022 INVALID_SIGNATURE**
