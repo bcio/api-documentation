@@ -399,7 +399,7 @@ If the symbol is not sent, tickers for all symbols will be returned in an array.
 - **Response :**
     ```javascript
     {
-      "symbol": "BNBBTC",
+      "symbol": "LTCBTC",
       "priceChange": "-94.99999800",
       "priceChangePercent": "-95.960",
       "weightedAvgPrice": "0.29628482",
@@ -501,7 +501,7 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
 - **Response ACK :**
     ```javascript
     {
-      "symbol": "BTCUSDT",
+      "symbol": "LTCBTC",
       "orderId": 28,
       "clientOrderId": "6gCrw2kRUAF9CvJDGP16IP",
       "transactTime": 1507725176595
@@ -512,7 +512,7 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
 - **Response RESULT :**
     ```javascript
     {
-      "symbol": "BTCUSDT",
+      "symbol": "LTCBTC",
       "orderId": 28,
       "clientOrderId": "6gCrw2kRUAF9CvJDGP16IP",
       "transactTime": 1507725176595,
@@ -531,7 +531,7 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
 - **Response FULL :**
     ```javascript
     {
-      "symbol": "BTCUSDT",
+      "symbol": "LTCBTC",
       "orderId": 28,
       "clientOrderId": "6gCrw2kRUAF9CvJDGP16IP",
       "transactTime": 1507725176595,
@@ -548,31 +548,31 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
           "price": "4000.00000000",
           "qty": "1.00000000",
           "commission": "4.00000000",
-          "commissionAsset": "USDT"
+          "commissionAsset": "BTC"
         },
         {
           "price": "3999.00000000",
           "qty": "5.00000000",
           "commission": "19.99500000",
-          "commissionAsset": "USDT"
+          "commissionAsset": "BTC"
         },
         {
           "price": "3998.00000000",
           "qty": "2.00000000",
           "commission": "7.99600000",
-          "commissionAsset": "USDT"
+          "commissionAsset": "BTC"
         },
         {
           "price": "3997.00000000",
           "qty": "1.00000000",
           "commission": "3.99700000",
-          "commissionAsset": "USDT"
+          "commissionAsset": "BTC"
         },
         {
           "price": "3995.00000000",
           "qty": "1.00000000",
           "commission": "3.99500000",
-          "commissionAsset": "USDT"
+          "commissionAsset": "BTC"
         }
       ]
     }
@@ -825,14 +825,14 @@ Get all account orders; active, canceled, or filled.
     ```javascript
     [
       {
-        "symbol": "BNBBTC",
+        "symbol": "LTCBTC",
         "id": 28457,
         "orderId": 100234,
         "price": "4.00000100",
         "qty": "12.00000000",
         "quoteQty": "48.000012",
         "commission": "10.10000000",
-        "commissionAsset": "BNB",
+        "commissionAsset": "LTC",
         "time": 1499865549590,
         "isBuyer": true,
         "isMaker": false,
