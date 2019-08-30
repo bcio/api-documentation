@@ -1,7 +1,7 @@
 ![image alt text](logo.svg)
 
 # Blockchain.io HMAC API
-Version: 1.0
+Version: 1.0  
 Last updated: August 30th 2019
 
 ----------
@@ -48,7 +48,7 @@ For security purposes, every private endpoint has two mandatory and one optional
 - **recvWindow** (optional) **:** *number of milliseconds after* `timestamp` *the request is valid for*
 - **signature** (mandatory)**:** *signed payload using* *your secret key*
 
-[You can find more informations about the importance of these parameters here.](https://paper.dropbox.com/doc/Blockchain.io-HMAC-API--Ad6ZmyJbwzwewAHMuCg9LSHnAg-tpbhArBW4Z3nj5bBN3Acm#:uid=904234565802109310384105&h2=Timing-security)
+[You can find more informations about the importance of these parameters here.](#timing-security)
 
 Your public key has to be passed in `X-BCIO-APIKEY` header field.
 
