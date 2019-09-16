@@ -480,8 +480,8 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
 | **Name**         | **Type** | **Mandatory** | **Description**                                                                                                                           |
 | ---------------- | -------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | symbol           | STRING   | YES           |                                                                                                                                           |
-| side             | ENUM     | YES           |                                                                                                                                           |
-| type             | ENUM     | YES           |                                                                                                                                           |
+| side             | ENUM     | YES           | `BUY` or `SELL`                                                                                                                                         |
+| type             | ENUM     | YES           | `MARKET` or `LIMIT`                                                                                                                                         |
 | timeInForce      | ENUM     | NO            | Only GTC available                                                                                                                        |
 | quantity         | DECIMAL  | YES           |                                                                                                                                           |
 | price            | DECIMAL  | NO            |                                                                                                                                           |
@@ -496,6 +496,14 @@ If the symbol is not sent, bookTickers for all symbols will be returned in an ar
   | -------- | ----------------------------------- |
   | `LIMIT`  | `timeInForce`, `price`              |
 
+- Order `status`:
+
+  | **Type** | **Description** |
+  | -------- | ----------------------------------- |
+  | `NEW`  | Order has been newly created and hasn't been consumed yet              |
+  | `PARTIALLY_FILLED` | Order has been partially consumed and still available |
+  | `FILLED` | Order has been fully consumed and is not available anymore |
+  | `CANCELLED` | Order has been cancelled |
 
 
 - **Response ACK :**
