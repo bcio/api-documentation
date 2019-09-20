@@ -2,7 +2,7 @@
 
 # Blockchain.io HMAC API
 Version: 1.0  
-Last updated: August 30th 2019
+Last updated: September 20th 2019
 
 # Table of contents
 
@@ -15,6 +15,7 @@ Last updated: August 30th 2019
   - [GET /exchangeInfo](#exchange-trading-rules-and-symbols-informations)
   - [GET /depth](#order-book-depth)
   - [GET /trades](#recent-trades-list)
+  - [GET /historicalTrades](#old-trades-lookup)
   - [GET /aggTrades](#compressedaggregate-trades-list)
   - [GET /klines](#klinecandlestick-data)
   - [GET /avgPrice](#current-average-price)
@@ -251,6 +252,35 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
 | -------- | -------- | ------------- | ---------------------- |
 | symbol   | STRING   | YES           |                        |
 | limit    | INT      | NO            | Default 500; max 1000. |
+
+
+
+- **Response** :
+    ```javascript
+    [
+      {
+        "id": 28457,
+        "price": "4.00000100",
+        "qty": "12.00000000",
+        "time": 1499865549590,
+        "isBuyerMaker": true,
+        "isBestMatch": true
+      }
+    ]
+    ```
+---
+#### Old trades lookup
+
+    GET https://api.blockchain.io/v1/historicalTrades
+
+
+- **Parameters** :
+
+| **Name** | **Type** | **Mandatory** | **Description**        |
+| -------- | -------- | ------------- | ---------------------- |
+| symbol   | STRING   | YES           |                        |
+| limit    | INT      | NO            | Default 500; max 1000. |
+| fromId    | INT      | NO            | TradeId to fetch from. Default gets most recent trades |
 
 
 
