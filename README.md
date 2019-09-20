@@ -15,7 +15,6 @@ Last updated: September 20th 2019
   - [GET /exchangeInfo](#exchange-trading-rules-and-symbols-informations)
   - [GET /depth](#order-book-depth)
   - [GET /trades](#recent-trades-list)
-  - [GET /historicalTrades](#old-trades-lookup)
   - [GET /aggTrades](#compressedaggregate-trades-list)
   - [GET /klines](#klinecandlestick-data)
   - [GET /avgPrice](#current-average-price)
@@ -27,6 +26,7 @@ Last updated: September 20th 2019
   - [POST /order/test](#create-order--test)
   - [GET /order](#query-order)
   - [DEL /order](#cancel-order)
+  - [GET /historicalTrades](#old-trades-lookup)
   - [GET /openOrders](#current-open-orders)
   - [GET /allOrders](#all-orders)
   - [GET /account](#account-information)
@@ -252,35 +252,6 @@ Here is a step-by-step example of how to send a valid signed payload from the Li
 | -------- | -------- | ------------- | ---------------------- |
 | symbol   | STRING   | YES           |                        |
 | limit    | INT      | NO            | Default 500; max 1000. |
-
-
-
-- **Response** :
-    ```javascript
-    [
-      {
-        "id": 28457,
-        "price": "4.00000100",
-        "qty": "12.00000000",
-        "time": 1499865549590,
-        "isBuyerMaker": true,
-        "isBestMatch": true
-      }
-    ]
-    ```
----
-#### Old trades lookup
-
-    GET https://api.blockchain.io/v1/historicalTrades
-
-
-- **Parameters** :
-
-| **Name** | **Type** | **Mandatory** | **Description**        |
-| -------- | -------- | ------------- | ---------------------- |
-| symbol   | STRING   | YES           |                        |
-| limit    | INT      | NO            | Default 500; max 1000. |
-| fromId    | INT      | NO            | TradeId to fetch from. Default gets most recent trades |
 
 
 
@@ -711,6 +682,35 @@ Same as `POST https://api.blockchain.io/v1/order`
       "type": "LIMIT",
       "side": "SELL"
     }
+    ```
+---
+#### Old trades lookup
+
+    GET https://api.blockchain.io/v1/historicalTrades
+
+Gets older trades of the platform. This route requires your API Key ONLY, NO signature NOR timestamp needed.
+- **Parameters** :
+
+| **Name** | **Type** | **Mandatory** | **Description**        |
+| -------- | -------- | ------------- | ---------------------- |
+| symbol   | STRING   | YES           |                        |
+| limit    | INT      | NO            | Default 500; max 1000. |
+| fromId    | INT      | NO            | TradeId to fetch from. Default gets most recent trades |
+
+
+
+- **Response** :
+    ```javascript
+    [
+      {
+        "id": 28457,
+        "price": "4.00000100",
+        "qty": "12.00000000",
+        "time": 1499865549590,
+        "isBuyerMaker": true,
+        "isBestMatch": true
+      }
+    ]
     ```
 ---
 #### Current open orders
